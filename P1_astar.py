@@ -14,6 +14,7 @@ class AStar(object):
         self.x_init = self.snap_to_grid(x_init)    # initial state
         self.x_goal = self.snap_to_grid(x_goal)    # goal state
 
+        self.max_distance = 2 * self.distance(self.statespace_lo, self.statespace_hi)
         self.directions = [(-1, -1), (-1, 0), (-1, 1),
                            (0, -1), (0, 1),
                            (1, -1), (1, 0), (1, 1)]
@@ -176,7 +177,8 @@ class AStar(object):
                 c_neighbor = cost_to_arrive_x_current + self.distance(x_current, x_neighbor)
                 if x_neighbor not in self.open_set:
                     self.open_set.add(x_neighbor)
-                elif c_neighbor >= self.cost_to_arrive[x_neighbor]:
+                elif c_neighbor >= min(self.cost_to_arrive[x_neighbor],
+                                       self.cost_to_arrive.get(self.x_goal, self.max_distance)):
                     continue
                 self.came_from[x_neighbor] = x_current
                 self.cost_to_arrive[x_neighbor] = c_neighbor
