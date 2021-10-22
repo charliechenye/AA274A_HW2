@@ -125,7 +125,7 @@ class AStar(object):
 
     def plot_path(self, fig_num=0, show_init_label=True):
         """Plots the path found in self.path and the obstacles"""
-        if not self.path:
+        if self.path is None:
             return
 
         self.occupancy.plot(fig_num)
@@ -167,6 +167,7 @@ class AStar(object):
         while self.open_set:
             x_current = self.find_best_est_cost_through()
             if x_current == self.x_goal:
+                self.path = np.array(self.reconstruct_path())
                 return True
             self.open_set.remove(x_current)
             self.closed_set.add(x_current)
