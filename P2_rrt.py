@@ -105,7 +105,39 @@ class RRT(object):
         #   - the order in which you pass in arguments to steer_towards and is_free_motion is important
 
         ########## Code starts here ##########
-        
+        def reconstruct_path():
+            self.path = [self.x_goal, ]
+            current_pointer = n - 1
+            while current_pointer != -1:
+                parent_pointer = P[current_pointer]
+                self.path.append(V[parent_pointer, :])
+                current_pointer = parent_pointer
+            self.path.pop()
+            self.path.reverse()
+            # print(self.path)
+
+        for iter_k in range(max_iters):
+            if np.random.uniform() < goal_bias:
+                # set x_rand to target with probability goal_bias
+                x_rand = self.x_goal
+            else:
+                x_rand = np.zeros((state_dim, ))
+                for i in range(state_dim):
+                    x_rand[i] = np.random.uniform(self.statespace_lo[i], self.statespace_hi[i])
+            x_near_i = self.find_nearest(V[:n, :], x_rand)
+            x_near = V[x_near_i, :]
+            x_new = self.steer_towards(x_near, x_rand, eps)
+
+            if self.is_free_motion(self.obstacles, x_near, x_new):
+                V[n, :] = x_new
+                P[n] = x_near_i
+                n = n + 1
+                if (x_new == self.x_goal).all():
+                    success = True
+                    reconstruct_path()
+
+            if success:
+                break
         ########## Code ends here ##########
 
         plt.figure()
@@ -143,7 +175,17 @@ class RRT(object):
             None, but should modify self.path
         """
         ########## Code starts here ##########
-        
+        success = False
+        while not success:
+            success = True
+            i = 1
+            while i < len(self.path) - 1:
+                # if a node's parent and child can connect directly, the node should be removed
+                if self.is_free_motion(self.obstacles, self.path[i - 1], self.path[i + 1]):
+                    success = False
+                    del self.path[i]
+                else:
+                    i += 1
         ########## Code ends here ##########
 
 class GeometricRRT(RRT):
@@ -156,14 +198,16 @@ class GeometricRRT(RRT):
         # Consult function specification in parent (RRT) class.
         ########## Code starts here ##########
         # Hint: This should take one line.
-        
+        # assume V is truncated to appropriate iterations
+        return np.argmin(np.linalg.norm(V - x, axis=1))
         ########## Code ends here ##########
 
     def steer_towards(self, x1, x2, eps):
         # Consult function specification in parent (RRT) class.
         ########## Code starts here ##########
         # Hint: This should take one line.
-        
+        distance_1_2 = np.linalg.norm(x2 - x1)
+        return np.array(x1 + (x2 - x1) / distance_1_2 * min(eps, distance_1_2))
         ########## Code ends here ##########
 
     def is_free_motion(self, obstacles, x1, x2):
@@ -203,7 +247,11 @@ class DubinsRRT(RRT):
         # HINT: The order of arguments for dubins.shortest_path() is important for DubinsRRT.
         import dubins
         ########## Code starts here ##########
-        
+        potential_lengths = np.zeros(len(V))
+        for i in range(len(V)):
+            potential_lengths[i] = dubins.shortest_path(V[i, :], x, self.turning_radius).path_length()
+        # print(x, potential_lengths)
+        return np.argmin(potential_lengths)
         ########## Code ends here ##########
 
     def steer_towards(self, x1, x2, eps):
@@ -219,7 +267,11 @@ class DubinsRRT(RRT):
         """
         # HINT: You may find the functions dubins.shortest_path(), d_path.path_length(), and d_path.sample_many() useful
         ########## Code starts here ##########
-        
+        shortest_path = dubins.shortest_path(x1, x2, 1.001 * self.turning_radius)
+        if shortest_path.path_length() < eps:
+            return x2
+        else:
+            return shortest_path.sample_many(eps)[0][1]
         ########## Code ends here ##########
 
     def is_free_motion(self, obstacles, x1, x2, resolution = np.pi/6):
