@@ -121,9 +121,8 @@ class RRT(object):
                 # set x_rand to target with probability goal_bias
                 x_rand = self.x_goal
             else:
-                x_rand = np.zeros((state_dim, ))
-                for i in range(state_dim):
-                    x_rand[i] = np.random.uniform(self.statespace_lo[i], self.statespace_hi[i])
+                x_rand = np.array([np.random.uniform(self.statespace_lo[i], self.statespace_hi[i])
+                                   for i in range(state_dim)])
             x_near_i = self.find_nearest(V[:n, :], x_rand)
             x_near = V[x_near_i, :]
             x_new = self.steer_towards(x_near, x_rand, eps)

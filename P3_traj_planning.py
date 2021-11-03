@@ -44,7 +44,7 @@ def compute_smoothed_traj(path, V_des, alpha, dt):
     wheeled robot.
 
     Inputs:
-        path (np.array [N,2]): Initial path
+        path (list of [N,2]): Initial path
         V_des (float): Desired nominal velocity, used as a heuristic to assign nominal
             times to points in the initial path
         alpha (float): Smoothing parameter (see documentation for
@@ -59,7 +59,7 @@ def compute_smoothed_traj(path, V_des, alpha, dt):
     # Hint 1 - Determine nominal time for each point in the path using V_des
     # Hint 2 - Use splrep to determine cubic coefficients that best fit given path in x, y
 
-    # path = np.array(path)
+    path = np.array(path)
     x_old = path[:,0]
     y_old = path[:,1]
     n = np.shape(x_old)[0]
